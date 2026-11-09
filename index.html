@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sakhi AI Companion</title>
+    <!-- Load TensorFlow.js and Speech Commands Framework libraries -->
+    <script src="https://jsdelivr.net"></script>
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fdf6f6; color: #333; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .app-card { width: 100%; max-width: 500px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 2px solid #ffb6c1; text-align: center; }
+        h1 { color: #d63384; margin-top: 0; font-size: 1.8rem; }
+        p { color: #666; font-size: 0.95rem; }
+        #status-pill { display: inline-block; background: #fff0f5; color: #d63384; padding: 6px 16px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; margin-bottom: 20px; border: 1px solid #ffc0cb; }
+        .sakhi-response-box { background: #fff5f5; min-height: 100px; padding: 20px; border-radius: 15px; border-left: 5px solid #d63384; margin-top: 20px; display: flex; align-items: center; justify-content: center; }
+        #sakhi-text { font-size: 1.2rem; color: #333; font-weight: 500; line-height: 1.5; margin: 0; }
+    </style>
+</head>
+<body>
+
+    <div class="app-card">
+        <h1>🌸 Sakhi AI Companion</h1>
+        <p>Your unchanging, stable anchor. She listens to the emotion in your voice.</p>
+        
+        <div id="status-pill">System Booting...</div>
+
+        <div class="sakhi-response-box">
+            <p id="sakhi-text">Initializing listening matrix. Please allow microphone access if prompted...</p>
+        </div>
+    </div>
+https://teachablemachine.withgoogle.com/models/ligh9Lqai/
+    <script type="text/javascript">
+        // 1. PASTE YOUR TEACHABLE MACHINE CLOUD LINK HERE (Keep the trailing slash!)
+        const URL = "https://withgoogle.com";
+
+        async function createModel() {
+            const checkpointURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+
+            const recognizer = speechCommands.create(
+                "BROWSER_FFT",
+                undefined,
+                checkpointURL,
+                metadataURL
+            );
+
+            await recognizer.ensureModelLoaded();
+            return recognizer;
+        }
+
+        async function init() {
+            try {
+                const recognizer = await createModel();
+                const classLabels = recognizer.wordLabels(); // Array structure: ['Background Noise', 'Sad', 'Normal']
+                
+                document.getElementById("status-pill").innerText = "🌸 SAKHI IS LISTENING";
+                document.getElementById("sakhi-text").innerText = "Hello. I am right here with you in the quiet. Talk to me whenever you feel ready.";
+
+                // 2. Start streaming microphone frequencies
+                recognizer.listen(result => {
+                    const scores = result.scores;
+                    let maxScoreIndex = 0;
+                    let maxScore = 0;
+
+                    // Evaluate mathematical matrix probabilities
+                    for (let i = 0; i < scores.length; i++) {
+                        if (scores[i] > maxScore) {
+                            maxScore = scores[i];
+                            maxScoreIndex = i;
+                        }
+                    }
+
+                    const detectedClass = classLabels[maxScoreIndex];
+
+                    // 3. Dynamic Dialogue Changes Based on Voice Input
+                    if (detectedClass === "Sad" && maxScore > 0.82) {
+                        document.getElementById("sakhi-text").innerText = "I can hear how heavy your heart sounds right now... Please know you don't have to carry this exhaustion alone. I am right here holding space for you.";
+                    } else if (detectedClass === "Normal" && maxScore > 0.85) {
+                        document.getElementById("sakhi-text").innerText = "It is wonderful to hear your steady voice. Remember that whatever happens out there, this space is completely safe and unchanging.";
+                    }
+                }, {
+                    includeSpectrogram: true,
+                    probabilityThreshold: 0.75,
+                    invokeCallbackOnNoiseAndUnknown: true,
+                    overlapFactor: 0.50 // Analyzes audio overlaps smoothly
+                });
+
+            } catch (error) {
+                console.error(error);
+                document.getElementById("status-pill").innerText = "❌ ERROR";
+                document.getElementById("sakhi-text").innerText = "Could not access mic hardware. Please check your system settings or try using a mobile browser.";
+            }
+        }
+
+        // Initialize script instantly on load
+        init();
+    </script>
+</body>
+</html>
