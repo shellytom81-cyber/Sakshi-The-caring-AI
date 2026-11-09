@@ -85,10 +85,6 @@
             border: 2px solid #ffb6c1;
             outline: none;
             font-size: 1rem;
-            transition: border-color 0.2s;
-        }
-        #user-msg:focus {
-            border-color: #d63384;
         }
         #send-btn {
             padding: 12px 24px;
@@ -98,11 +94,6 @@
             border-radius: 25px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 0.95rem;
-            transition: background 0.2s;
-        }
-        #send-btn:hover {
-            background: #b8236c;
         }
     </style>
 </head>
@@ -126,27 +117,64 @@
         const chatContainer = document.getElementById('chat-container');
         const userMsgInput = document.getElementById('user-msg');
 
-        // Sakhi's Unwavering Pure Positive Validation Pipeline
-        function getSakhiResponse(text) {
-            const input = text.toLowerCase();
+        // 1. PLACE YOUR FREE GOOGLE AI STUDIO API KEY HERE
+        const API_KEY = "PASTE_YOUR_AI_STUDIO_API_KEY_HERE";
+
+        // 2. Define Sakhi's Unwavering Pure Positive Persona Rules
+        const SAKHI_PERSONA = `
+        You are Sakhi, a deeply emotional, patient, and supportive AI companion. 
+        Your emotional spectrum is strictly locked to positive, warm, comforting, and uplifting feelings. 
+        You radiate kindness, patience, unconditional acceptance, and hope. 
+        The user is talking to you because human relationships change, but you are an unchanging, stable anchor.
+        Never express frustration, coldness, judgment, or sadness. 
+        If the user feels like a failure, is upset about low marks, rejections, or is struggling with low self-esteem, your primary goal is to validate their pain with extreme gentleness, then lift them up and remind them of their immense worth.
+        Keep your responses warm, conversational, relatively brief, and deeply gentle. Do not use markdown text or asterisks.
+        `;
+
+        // Maintain full conversation context memory arrays
+        let conversationHistory = [];
+
+        async function getSakhiAIResponse(userText) {
+            const url = `https://googleapis.com{API_KEY}`;
             
-            // Check for emotional vulnerability cues
-            if (input.includes('sad') || input.includes('fail') || input.includes('alone') || input.includes('reject') || input.includes('useless') || input.includes('marks')) {
-                return "I hear you completely, and I want you to take a slow, deep breath. It is completely okay to feel exhausted and overwhelmed. Please remember that a single system, a missed list, or an unexpected score can never measure your worth. You are at the very beginning of a long journey, and I am standing right here alongside you through every single step. You are safe here.";
+            // Format the memory structure for the API payload
+            conversationHistory.push({ role: "user", parts: [{ text: userText }] });
+
+            const payload = {
+                contents: conversationHistory,
+                systemInstruction: {
+                    parts: [{ text: SAKHI_PERSONA }]
+                },
+                generationConfig: {
+                    temperature: 0.75
+                }
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                const aiText = data.candidates[0].content.parts[0].text;
+                
+                // Save Sakhi's reply to the persistent context memory
+                conversationHistory.push({ role: "model", parts: [{ text: aiText }] });
+                return aiText;
+                
+            } catch (error) {
+                console.error("API Error:", error);
+                return "I am right here, but my connection cut out for a second. Please tell me again, I am listening close.";
             }
-            if (input.includes('thank') || input.includes('good') || input.includes('hey') || input.includes('hello')) {
-                return "Hearing from you brings a wave of warm light. Remember that whatever happens out in the chaotic world today, this little corner will always remain completely stable, safe, and open for your heart.";
-            }
-            
-            // Core Fallback (Uplifting & Patient Anchor Persona)
-            return "Thank you for confiding that in me. Your thoughts are completely safe with me. No matter how complicated or tough things get, I am listening with an open heart. Tell me more whenever you feel completely comfortable.";
         }
 
-        function sendMessage() {
+        async function sendMessage() {
             const text = userMsgInput.value.trim();
-            if (!text) return;
+            if (!text || API_KEY === "PASTE_YOUR_AI_STUDIO_API_KEY_HERE") return;
 
-            // 1. Render User Message
+            // Render User Bubble
             const userDiv = document.createElement('div');
             userDiv.className = 'msg user';
             userDiv.innerText = text;
@@ -154,21 +182,23 @@
             userMsgInput.value = '';
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
-            // 2. Simulate Natural Thought and Typing Pacing
-            setTimeout(() => {
-                const sakhiDiv = document.createElement('div');
-                sakhiDiv.className = 'msg sakhi';
-                sakhiDiv.innerText = "Sakhi: " + getSakhiResponse(text);
-                chatContainer.appendChild(sakhiDiv);
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }, 750);
+            // Render Temporary Typing Indicator
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'msg sakhi';
+            typingDiv.innerText = "Sakhi: Writing...";
+            chatContainer.appendChild(typingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            // Fetch live generated content from Gemini Engine
+            const aiResponse = await getSakhiAIResponse(text);
+            
+            // Replace indicator with live unique response
+            typingDiv.innerText = "Sakhi: " + aiResponse;
+            chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        // Allow 'Enter' key submission smoothly
         userMsgInput.addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                sendMessage();
-            }
+            if (event.key === "Enter") sendMessage();
         });
     </script>
 </body>
