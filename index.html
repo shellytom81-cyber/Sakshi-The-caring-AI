@@ -99,6 +99,7 @@
 </head>
 <body>
 
+    <!-- HTML SKELETON LAYER -->
     <div class="app-card">
         <h1>🌸 Sakhi AI</h1>
         <div class="subtitle">An unchanging anchor for your hardest times.</div>
@@ -113,6 +114,7 @@
         </div>
     </div>
 
+    <!-- JAVASCRIPT LIVING BRAIN LAYER -->
     <script type="text/javascript">
         const chatContainer = document.getElementById('chat-container');
         const userMsgInput = document.getElementById('user-msg');
@@ -131,13 +133,13 @@
         Keep your responses warm, conversational, relatively brief, and deeply gentle. Do not use markdown text or asterisks.
         `;
 
-        // Maintain full conversation context memory arrays
+        // Array matrix to store live dialogue memory context
         let conversationHistory = [];
 
         async function getSakhiAIResponse(userText) {
             const url = `https://googleapis.com{API_KEY}`;
             
-            // Format the memory structure for the API payload
+            // Push active input into context memory stack
             conversationHistory.push({ role: "user", parts: [{ text: userText }] });
 
             const payload = {
@@ -160,21 +162,22 @@
                 const data = await response.json();
                 const aiText = data.candidates[0].content.parts[0].text;
                 
-                // Save Sakhi's reply to the persistent context memory
+                // Commit model's reply into history tracking array
                 conversationHistory.push({ role: "model", parts: [{ text: aiText }] });
                 return aiText;
                 
             } catch (error) {
-                console.error("API Error:", error);
+                console.error("API Connection Error:", error);
                 return "I am right here, but my connection cut out for a second. Please tell me again, I am listening close.";
             }
         }
 
         async function sendMessage() {
             const text = userMsgInput.value.trim();
+            // Prevent execution if empty or key isn't setup
             if (!text || API_KEY === "PASTE_YOUR_AI_STUDIO_API_KEY_HERE") return;
 
-            // Render User Bubble
+            // Render static User Chat Bubble dynamically via JavaScript DOM
             const userDiv = document.createElement('div');
             userDiv.className = 'msg user';
             userDiv.innerText = text;
@@ -182,24 +185,29 @@
             userMsgInput.value = '';
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
-            // Render Temporary Typing Indicator
+            // Render a temporary Typing Status Indicator
             const typingDiv = document.createElement('div');
             typingDiv.className = 'msg sakhi';
             typingDiv.innerText = "Sakhi: Writing...";
             chatContainer.appendChild(typingDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
-            // Fetch live generated content from Gemini Engine
+            // Fetch unique generated response block from Google's servers
             const aiResponse = await getSakhiAIResponse(text);
             
-            // Replace indicator with live unique response
+            // Swap indicator text dynamically once API load finishes
             typingDiv.innerText = "Sakhi: " + aiResponse;
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
+        // Intercept hardware keyboard event arrays smoothly
         userMsgInput.addEventListener("keypress", function(event) {
-            if (event.key === "Enter") sendMessage();
+            if (event.key === "Enter") {
+                event.preventDefault(); // Prevents page from clearing out or reloading
+                sendMessage(); // Triggers message deployment
+            }
         });
     </script>
 </body>
 </html>
+
